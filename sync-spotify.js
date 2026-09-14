@@ -1,51 +1,61 @@
-require('dotenv').config();
-const axios = require('axios');
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const SPOTIFY_REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-async function getSpotifyAccessToken() {
-  const response = await axios.post(
-    'https://accounts.spotify.com/api/token',
-    new URLSearchParams({
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+async function getAccessToken() {
+  const response = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: 'Basic ' + Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64'),
+    },
+    body: new URLSearchParams({
       grant_type: 'refresh_token',
-      refresh_token: process.env.SPOTIFY_REFRESH_TOKEN,
-      client_id: process.env.SPOTIFY_CLIENT_ID,
-      client_secret: process.env.SPOTIFY_CLIENT_SECRET,
+      refresh_token: SPOTIFY_REFRESH_TOKEN,
     }),
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-  );
-  return response.data.access_token;
+  });
+
+  const data = await response.json();
+  return data.access_token;
 }
 
-async function sync() {
+async function syncSpotify() {
   try {
-    const token = await getSpotifyAccessToken();
-    const { data } = await axios.get(
-      'https://api.spotify.com/v1/me/player/recently-played?limit=20',
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const token = await getAccessToken();
+    const res = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-    for (const item of data.items) {
-      await supabase.from('spotify_history').upsert(
-        {
-          played_at: item.played_at,
-          track_name: item.track.name,
-          artist_name: item.track.artists.map((a) => a.name).join(', '),
-          album_name: item.track.album.name,
-          album_cover: item.track.album.images[0]?.url || '',
-          spotify_url: item.track.external_urls.spotify,
-        },
-        { onConflict: 'played_at' }
-      );
+    const data = await res.json();
+    if (!data.items) {
+      console.log('No se encontraron reproducciones.');
+      return;
     }
-    console.log('✅ Sincronización exitosa. Canciones guardadas en Supabase.');
+
+    const records = data.items.map(item => ({
+      played_at: item.played_at,
+      track_name: item.track.name,
+      artist_name: item.track.artists.map(a => a.name).join(', '),
+      album_name: item.track.album.name,
+      album_cover: item.track.album.images[0]?.url,
+      spotify_url: item.track.external_urls.spotify,
+      duration_ms: item.track.duration_ms
+    }));
+
+    const { error } = await supabase.from('spotify_history').upsert(records, { onConflict: 'played_at' });
+
+    if (error) throw error;
+    console.log(`Sincronización exitosa: ${records.length} canciones procesadas.`);
   } catch (err) {
-    console.error('❌ Error en la sincronización:', err.response?.data || err.message);
+    console.error('Error durante la sincronización:', err);
+    process.exit(1);
   }
 }
 
-sync();
+syncSpotify();
