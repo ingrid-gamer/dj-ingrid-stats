@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DJ Pixula - Stats</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-950 text-white min-h-screen p-6 font-sans">
+  <div class="max-w-4xl mx-auto">
+    <!-- Encabezado -->
+    <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-800 pb-6 mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold text-green-400 tracking-tight">🎧 DJ Pixula Stats</h1>
+        <p class="text-gray-400 text-sm mt-1">Historial de reproducciones en tiempo real</p>
+      </div>
+      <span class="inline-flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1 rounded-full text-xs font-semibold">
+        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Auto-Sync Activo
+      </span>
+    </header>
+
+    <!-- Lista de canciones -->
+    <div id="songs-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <p class="text-gray-500 col-span-2 text-center py-10">Cargando canciones...</p>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://zbovgcnqoavnmlybkhfj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpib3ZnY25xb2F2bm1seWJraGZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzNDA1MTEsImV4cCI6MjEwNDkxNjUxMX0.BEoV7tFd4c6OKtvThJkTaHP5SKevOUnGBHCNtDbjSfE';
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadStats() {
+      const { data: songs, error } = await client
+        .from('spotify_history')
+        .select('*')
+        .order('played_at', { ascending: false })
+        .limit(40);
+
+      const container = document.getElementById('songs-list');
+
+      if (error) {
+        console.error('Error cargando canciones:', error);
+        container.innerHTML = `<p class="text-red-400 col-span-2 text-center">Error al conectar con la base de datos.</p>`;
+        return;
+      }
+
+      if (!songs || songs.length === 0) {
+        container.innerHTML = `<p class="text-gray-400 col-span-2 text-center">No hay reproducciones registradas aún.</p>`;
+        return;
+      }
+
+      container.innerHTML = songs.map(song => `
+        <a href="${song.spotify_url}" target="_blank" class="flex items-center gap-4 bg-gray-900/60 border border-gray-800/80 hover:border-green-500/50 p-3 rounded-xl transition duration-200 group">
+          <img src="${song.album_cover}" alt="Portada" class="w-16 h-16 rounded-lg object-cover shadow-md group-hover:scale-105 transition flex-shrink-0">
+          <div class="overflow-hidden min-w-0">
+            <h3 class="font-bold text-white truncate text-sm group-hover:text-green-400 transition">${song.track_name}</h3>
+            <p class="text-gray-400 text-xs truncate">${song.artist_name}</p>
+            <p class="text-gray-500 text-[10px] mt-1">${new Date(song.played_at).toLocaleString()}</p>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>
