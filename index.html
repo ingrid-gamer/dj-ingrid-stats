@@ -1,169 +1,132 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Perfil personal de escucha de Spotify: canciones, álbumes y últimas reproducciones de DJ Pixula">
-  <meta name="theme-color" content="#000000">
-  <meta property="og:title" content="DJ Pixula — Spotify Stats">
-  <meta property="og:description" content="Mis canciones, álbumes y reproducciones más escuchadas. Actualizado con mi Extended Streaming History de Spotify.">
-  <meta property="og:type" content="website">
-  <title>DJ Pixula — Spotify Stats</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>DJPixula - Perfil de Spotify</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .text-shadow {
+      text-shadow: 0px 1px 3px rgba(0,0,0,0.9);
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-black text-white font-sans antialiased">
-  <main class="mx-auto max-w-[1500px] px-4 py-8 sm:px-6 lg:px-8">
+<body class="pb-10 max-w-md mx-auto min-h-screen bg-neutral-900 border-x border-neutral-800">
 
-    <!-- HEADER -->
-    <header class="mb-12 flex flex-col gap-5 border-b border-neutral-800 pb-7 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">Perfil de escucha</p>
-        <h1 class="text-3xl font-black tracking-tight sm:text-4xl">🎧 DJ Pixula Spotify Stats</h1>
-        <p class="mt-2 text-sm text-neutral-400">Historial completo de Spotify y estadísticas personales de reproducción</p>
-      </div>
+  <!-- ENCABEZADO Y PERFIL -->
+  <header class="relative">
+    <div class="h-36 w-full overflow-hidden bg-neutral-800">
+      <img 
+        src="https://i.pinimg.com/736x/2a/b8/56/2ab856bdea4cf4577025f7f32daa2b66.jpg" 
+        alt="Encabezado" 
+        class="w-full h-full object-cover"
+      />
+    </div>
 
-      <div class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-900/60 bg-emerald-950/30 px-3 py-2 text-xs font-semibold text-emerald-400">
-        <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-        Datos desde Supabase
+    <div class="px-4 relative flex justify-between items-end -mt-12 mb-3">
+      <div class="relative">
+        <img 
+          src="https://i.pinimg.com/736x/0e/89/90/0e8990f4a1a440c557a8d8fa6f1063b6.jpg" 
+          alt="DJPixula Avatar" 
+          class="w-24 h-24 rounded-full border-4 border-neutral-900 object-cover shadow-lg"
+        />
       </div>
-    </header>
+      <div class="bg-neutral-800/90 backdrop-blur border border-neutral-700 px-3 py-1.5 rounded-full text-xs font-semibold text-neutral-200 shadow-md">
+        <i class="fa-solid fa-headphones text-red-500 mr-1"></i>
+        <span id="total-plays-count">...</span> reproducciones
+      </div>
+    </div>
 
-    <!-- 1. TOP TRACKS 90 DÍAS -->
-    <section class="mb-14">
-      <div class="mb-5">
-        <h2 class="flex items-center gap-2 text-xl font-bold text-emerald-400 sm:text-2xl">
-          🔥 Top 10 canciones más escuchadas los últimos días
-        </h2>
-        <p class="mt-1 text-xs text-neutral-500">Últimos 90 días · ordenadas por cantidad de reproducciones</p>
+    <div class="px-4">
+      <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+        DJPixula
+        <i class="fa-solid fa-circle-check text-red-500 text-sm"></i>
+      </h1>
+      <p class="text-xs text-neutral-400 mt-1">
+        Estadísticas de reproducción filtradas
+      </p>
+    </div>
+  </header>
+
+  <main class="px-4 mt-6 space-y-8">
+
+    <!-- RECIENTEMENTE ESCUCHADAS (Lista de 10) -->
+    <section>
+      <div class="flex items-center gap-2 mb-3 border-b border-neutral-800 pb-2">
+        <i class="fa-solid fa-clock-rotate-left text-red-500"></i>
+        <h2 class="text-base font-bold text-white uppercase tracking-wider text-xs">Recientemente escuchadas</h2>
       </div>
-      <div id="top-tracks-recent" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
-        <div class="col-span-full py-10 text-center text-sm text-neutral-500">Cargando...</div>
+      <div id="recent-tracks-list" class="space-y-2">
+        <div class="text-xs text-neutral-500 animate-pulse">Cargando reproducciones recientes...</div>
       </div>
     </section>
 
-    <!-- 2. TOP ÁLBUMES 90 DÍAS -->
-    <section class="mb-14">
-      <div class="mb-5">
-        <h2 class="flex items-center gap-2 text-xl font-bold text-emerald-400 sm:text-2xl">
-          💿 Top 5 álbumes más escuchados del último tiempo
-        </h2>
-        <p class="mt-1 text-xs text-neutral-500">Últimos 90 días · suma las reproducciones de las canciones pertenecientes al álbum</p>
+    <!-- COLLAGE VISUAL (Usando top canciones para mostrar carátulas) -->
+    <section>
+      <div class="flex items-center gap-2 mb-3 border-b border-neutral-800 pb-2">
+        <i class="fa-solid fa-fire text-red-500"></i>
+        <h2 class="text-base font-bold text-white uppercase tracking-wider text-xs">Artistas más escuchados</h2>
       </div>
-      <div id="top-albums-recent" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <div class="col-span-full py-10 text-center text-sm text-neutral-500">Cargando...</div>
+      <div id="artists-collage" class="grid grid-cols-5 gap-1.5 w-full">
+        <!-- Generado por JS -->
       </div>
     </section>
 
-    <!-- 3. TOP TRACKS ALL TIME -->
-    <section class="mb-14">
-      <div class="mb-5">
-        <h2 class="flex items-center gap-2 text-xl font-bold text-blue-400 sm:text-2xl">
-          ⭐ Top 10 canciones de TODOS LOS TIEMPOS
-        </h2>
-        <p class="mt-1 text-xs text-neutral-500">Historial completo acumulado</p>
+    <!-- TOP 10 CANCIONES RECIENTES -->
+    <section>
+      <div class="flex items-center gap-2 mb-3 border-b border-neutral-800 pb-2">
+        <i class="fa-solid fa-flame text-orange-500"></i>
+        <h2 class="text-base font-bold text-white uppercase tracking-wider text-xs">Top 10 canciones (Recientes)</h2>
       </div>
-      <div id="top-tracks-all" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
-        <div class="col-span-full py-10 text-center text-sm text-neutral-500">Cargando...</div>
-      </div>
+      <div id="top-tracks-month-list" class="space-y-2"></div>
     </section>
 
-    <!-- 4. TOP ÁLBUMES ALL TIME -->
-    <section class="mb-14">
-      <div class="mb-5">
-        <h2 class="flex items-center gap-2 text-xl font-bold text-blue-400 sm:text-2xl">
-          🏆 Top 5 álbumes de TODOS LOS TIEMPOS
-        </h2>
-        <p class="mt-1 text-xs text-neutral-500">Historial completo · suma todas las reproducciones de las canciones del álbum</p>
+    <!-- TOP ÁLBUMES RECIENTES -->
+    <section>
+      <div class="flex items-center gap-2 mb-3 border-b border-neutral-800 pb-2">
+        <i class="fa-solid fa-compact-disc text-purple-400"></i>
+        <h2 class="text-base font-bold text-white uppercase tracking-wider text-xs">Top álbumes (Recientes)</h2>
       </div>
-      <div id="top-albums-all" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <div class="col-span-full py-10 text-center text-sm text-neutral-500">Cargando...</div>
-      </div>
+      <div id="top-albums-month-list" class="space-y-2"></div>
     </section>
 
-    <!-- 5. ÚLTIMAS 20 -->
-    <section class="border-t border-neutral-800 pt-10">
-      <div class="mb-5">
-        <h2 class="flex items-center gap-2 text-xl font-bold text-purple-400 sm:text-2xl">
-          🎧 Últimas canciones escuchadas
-        </h2>
-        <p class="mt-1 text-xs text-neutral-500">Las últimas 20 reproducciones · fecha y hora local de Chile (es-CL)</p>
+    <!-- TOP 10 CANCIONES TODOS LOS TIEMPOS -->
+    <section>
+      <div class="flex items-center gap-2 mb-3 border-b border-neutral-800 pb-2">
+        <i class="fa-solid fa-star text-yellow-500"></i>
+        <h2 class="text-base font-bold text-white uppercase tracking-wider text-xs">Top 10 canciones (Todos los tiempos)</h2>
       </div>
-      <div id="recent-raw" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
-        <div class="col-span-full py-10 text-center text-sm text-neutral-500">Cargando...</div>
-      </div>
+      <div id="top-tracks-alltime-list" class="space-y-2"></div>
     </section>
 
-    <footer class="mt-14 border-t border-neutral-900 pt-6 text-center text-xs text-neutral-600">
-      Datos de escucha: Spotify Extended Streaming History · Presentación: DJ Pixula Stats
-    </footer>
+    <!-- TOP 5 ÁLBUMES TODOS LOS TIEMPOS -->
+    <section>
+      <div class="flex items-center gap-2 mb-3 border-b border-neutral-800 pb-2">
+        <i class="fa-solid fa-trophy text-amber-400"></i>
+        <h2 class="text-base font-bold text-white uppercase tracking-wider text-xs">Top 5 álbumes (Todos los tiempos)</h2>
+      </div>
+      <div id="top-albums-alltime-list" class="space-y-2"></div>
+    </section>
+
   </main>
 
+  <!-- LÓGICA DE CONEXIÓN CON SUPABASE -->
   <script>
-    // ------------------------------------------------------------------------
-    // CONFIGURACIÓN SUPABASE
-    // La clave anon/publicable puede estar en el frontend.
-    // NUNCA pongas aquí service_role / secret key.
-    // ------------------------------------------------------------------------
+    // Credenciales exactas de tu código funcional anterior
     const SUPABASE_URL = 'https://zbovgcnqoavnmlybkhfj.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpib3ZnY25xb2F2bm1seWJraGZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzNDA1MTEsImV4cCI6MjEwNDkxNjUxMX0.BEoV7tFd4c6OKtvThJkTaHP5SKevOUnGBHCNtDbjSfE';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // NOTA:
-    // Mantén exactamente tu anon/publishable key real si la anterior fue
-    // reemplazada o regenerada en Supabase.
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const DEFAULT_IMAGE = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
-        <rect width="500" height="500" fill="#262626"/>
-        <circle cx="250" cy="210" r="72" fill="#525252"/>
-        <path d="M145 395c0-62 47-112 105-112s105 50 105 112" fill="#525252"/>
-        <text x="250" y="455" text-anchor="middle" font-size="28" fill="#a3a3a3" font-family="Arial, sans-serif">Sin portada</text>
-      </svg>
-    `)}`;
-
-    // ------------------------------------------------------------------------
-    // SEGURIDAD Y FORMATO
-    // ------------------------------------------------------------------------
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-
-    function cleanImageUrl(value) {
-      if (!value || typeof value !== 'string') return DEFAULT_IMAGE;
-      const url = value.trim();
-      if (!url) return DEFAULT_IMAGE;
-      if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('data:image/')) {
-        return url;
-      }
-      return DEFAULT_IMAGE;
-    }
-
-    function spotifyUrl(uri) {
-      if (!uri || typeof uri !== 'string') return null;
-      if (uri.startsWith('spotify:track:')) {
-        const id = uri.slice('spotify:track:'.length).trim();
-        return id ? `https://open.spotify.com/track/${encodeURIComponent(id)}` : null;
-      }
-      if (uri.startsWith('spotify:album:')) {
-        const id = uri.slice('spotify:album:'.length).trim();
-        return id ? `https://open.spotify.com/album/${encodeURIComponent(id)}` : null;
-      }
-      return null;
-    }
-
-    function formatPlays(value) {
-      const count = Number(value ?? 0);
-      if (!Number.isFinite(count)) return '0 reproducciones';
-      return `${count.toLocaleString('es-CL')} ${count === 1 ? 'reproducción' : 'reproducciones'}`;
-    }
-
+    // Formato de fecha para Chile
     function formatLocalDateTime(value) {
+      if (!value) return '';
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return 'Fecha no disponible';
 
@@ -171,212 +134,110 @@
         timeZone: 'America/Santiago',
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
       }).format(date);
     }
 
-    function createCard({ rank, title, subtitle, badge, imageUrl, spotifyUri, accent = 'emerald' }) {
-      const safeTitle = escapeHtml(title || 'Desconocido');
-      const safeSubtitle = escapeHtml(subtitle || '');
-      const safeBadge = escapeHtml(badge || '');
-      const image = cleanImageUrl(imageUrl);
-      const target = spotifyUrl(spotifyUri);
-      const accentClass = accent === 'blue'
-        ? 'text-blue-400'
-        : accent === 'purple'
-          ? 'text-purple-400'
-          : 'text-emerald-400';
+    // Renderizado de las listas con carátula, título, álbum, artista y reproducciones/fecha
+    function renderTrackItem(track) {
+      const cover = track.album_cover || 'https://i.scdn.co/image/ab67616d00001e02167527ab3493b22cf94c03b1';
+      const title = track.track_name || track.album_name || 'Desconocido';
+      const isRecent = !!track.played_at;
+      const timeLabel = isRecent ? formatLocalDateTime(track.played_at) : `${track.veces_reproducidas || 0} plays`;
+      const albumName = track.album_name && title !== track.album_name ? ` • ${track.album_name}` : '';
 
-      const content = `
-        <div class="group overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 transition duration-200 hover:-translate-y-0.5 hover:border-neutral-700 hover:bg-neutral-900">
-          <div class="relative aspect-square overflow-hidden bg-neutral-900">
-            ${rank ? `
-              <div class="absolute left-2 top-2 z-10 rounded-md border border-black/30 bg-black/75 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
-                #${rank}
-              </div>
-            ` : ''}
-
-            <img
-              src="${escapeHtml(image)}"
-              alt="Portada de ${safeTitle}"
-              loading="eager"
-              class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-              onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"
-            >
+      return `
+        <div class="flex items-center gap-3 p-2 bg-neutral-800/40 rounded-lg border border-neutral-800/60 hover:bg-neutral-800 transition">
+          <img src="${cover}" alt="Portada" class="w-12 h-12 rounded object-cover flex-shrink-0 bg-neutral-900" />
+          <div class="flex-1 min-w-0">
+            <h3 class="text-sm font-semibold text-white truncate">${title}</h3>
+            <p class="text-xs text-neutral-400 truncate">${track.artist_name}${albumName}</p>
           </div>
-
-          <div class="p-3">
-            <h3 class="min-h-[2.1rem] text-sm font-bold leading-tight text-white">${safeTitle}</h3>
-            <p class="mt-1 line-clamp-2 min-h-[2rem] text-xs leading-tight text-neutral-400">${safeSubtitle}</p>
-            <div class="mt-3 flex items-center justify-between gap-2">
-              <span class="text-xs font-semibold ${accentClass}">${safeBadge}</span>
-              ${target ? `
-                <a
-                  href="${escapeHtml(target)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="shrink-0 text-[11px] font-medium text-neutral-500 transition hover:text-white"
-                >
-                  Spotify ↗
-                </a>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-
-      return content;
-    }
-
-    function renderError(elementId, message) {
-      const element = document.getElementById(elementId);
-      element.innerHTML = `
-        <div class="col-span-full rounded-xl border border-red-900/50 bg-red-950/20 p-5 text-sm text-red-300">
-          <strong>Error:</strong> ${escapeHtml(message)}
+          <span class="text-[10px] text-neutral-400 flex-shrink-0 ml-1 font-medium text-right leading-tight">
+            ${timeLabel.replace(' ', '<br>')}
+          </span>
         </div>
       `;
     }
 
-    function renderEmpty(elementId) {
-      const element = document.getElementById(elementId);
-      element.innerHTML = `
-        <div class="col-span-full rounded-xl border border-neutral-900 bg-neutral-950 p-8 text-center text-sm text-neutral-500">
-          Sin datos disponibles.
-        </div>
-      `;
-    }
-
-    // ------------------------------------------------------------------------
-    // CARGA DE DATOS
-    // ------------------------------------------------------------------------
-    async function loadView(viewName, { orderBy = null, limit = null } = {}) {
-      let query = supabaseClient.from(viewName).select('*');
-
-      if (orderBy) {
-        for (const order of orderBy) {
-          query = query.order(order.column, { ascending: order.ascending });
-        }
-      }
-
-      if (limit) query = query.limit(limit);
-
-      const { data, error } = await query;
-      if (error) throw new Error(`${viewName}: ${error.message}`);
-      return data ?? [];
-    }
-
-    function renderStats(items, elementId, type, accent) {
-      if (!items.length) {
-        renderEmpty(elementId);
-        return;
-      }
-
-      const html = items.map((item, index) => {
-        if (type === 'track') {
-          return createCard({
-            rank: index + 1,
-            title: item.track_name,
-            subtitle: item.artist_name,
-            badge: formatPlays(item.veces_reproducidas),
-            imageUrl: item.album_cover,
-            spotifyUri: item.spotify_track_uri,
-            accent
-          });
-        }
-
-        return createCard({
-          rank: index + 1,
-          title: item.album_name,
-          subtitle: item.artist_name,
-          badge: formatPlays(item.veces_reproducidas),
-          imageUrl: item.album_cover,
-          spotifyUri: item.spotify_album_uri,
-          accent
-        });
-      }).join('');
-
-      document.getElementById(elementId).innerHTML = html;
-    }
-
-    function renderRecent(items) {
-      if (!items.length) {
-        renderEmpty('recent-raw');
-        return;
-      }
-
-      document.getElementById('recent-raw').innerHTML = items.map((item, index) => createCard({
-        rank: index + 1,
-        title: item.track_name,
-        subtitle: item.artist_name,
-        badge: formatLocalDateTime(item.played_at),
-        imageUrl: item.album_cover,
-        spotifyUri: item.spotify_track_uri,
-        accent: 'purple'
-      })).join('');
-    }
-
-    async function loadDashboard() {
+    async function loadProfileData() {
       try {
-        const [tracksRecent, albumsRecent, tracksAll, albumsAll, recent] = await Promise.all([
-          loadView('view_top_tracks_recent', {
-            orderBy: [
-              { column: 'veces_reproducidas', ascending: false },
-              { column: 'track_name', ascending: true }
-            ],
-            limit: 10
-          }),
-          loadView('view_top_albums_recent', {
-            orderBy: [
-              { column: 'veces_reproducidas', ascending: false },
-              { column: 'album_name', ascending: true }
-            ],
-            limit: 5
-          }),
-          loadView('view_top_tracks_all_time', {
-            orderBy: [
-              { column: 'veces_reproducidas', ascending: false },
-              { column: 'track_name', ascending: true }
-            ],
-            limit: 10
-          }),
-          loadView('view_top_albums_all_time', {
-            orderBy: [
-              { column: 'veces_reproducidas', ascending: false },
-              { column: 'album_name', ascending: true }
-            ],
-            limit: 5
-          }),
-          loadView('view_recent_plays', {
-            orderBy: [
-              { column: 'played_at', ascending: false },
-              { column: 'id', ascending: false }
-            ],
-            limit: 20
-          })
-        ]);
+        // 1. Total reproducciones
+        const { count } = await supabase.from('view_recent_plays').select('*', { count: 'exact', head: true });
+        document.getElementById('total-plays-count').innerText = count ? count.toLocaleString('es-CL') : '...';
 
-        renderStats(tracksRecent, 'top-tracks-recent', 'track', 'emerald');
-        renderStats(albumsRecent, 'top-albums-recent', 'album', 'emerald');
-        renderStats(tracksAll, 'top-tracks-all', 'track', 'blue');
-        renderStats(albumsAll, 'top-albums-all', 'album', 'blue');
-        renderRecent(recent);
+        // 2. Recientemente Escuchadas (Últimas 10)
+        const { data: recent } = await supabase.from('view_recent_plays')
+          .select('*')
+          .order('played_at', { ascending: false })
+          .limit(10);
+        if (recent) {
+          document.getElementById('recent-tracks-list').innerHTML = recent.map(renderTrackItem).join('');
+        }
 
-      } catch (error) {
-        console.error('Error cargando dashboard:', error);
-        // No ocultamos el mensaje real detrás de un error genérico.
-        const message = error instanceof Error ? error.message : String(error);
-        renderError('top-tracks-recent', message);
-        renderError('top-albums-recent', message);
-        renderError('top-tracks-all', message);
-        renderError('top-albums-all', message);
-        renderError('recent-raw', message);
+        // 3. Collage de Artistas (Extraídos del top histórico)
+        const { data: topArtists } = await supabase.from('view_top_tracks_all_time')
+          .select('*')
+          .order('veces_reproducidas', { ascending: false })
+          .limit(10);
+        
+        if (topArtists) {
+          document.getElementById('artists-collage').innerHTML = topArtists.map(artist => `
+            <div class="aspect-square relative rounded overflow-hidden bg-neutral-800 shadow-sm border border-neutral-700/50">
+              <img src="${artist.album_cover || 'https://i.scdn.co/image/ab67616d00001e02167527ab3493b22cf94c03b1'}" 
+                   class="w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent flex flex-col justify-end p-1">
+                <span class="text-[9px] font-bold text-white truncate leading-tight text-shadow">${artist.artist_name}</span>
+                <span class="text-[7px] text-neutral-300 font-semibold uppercase tracking-wider">${artist.veces_reproducidas} plays</span>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // 4. Top 10 Canciones (Recientes / 90 días)
+        const { data: monthTracks } = await supabase.from('view_top_tracks_recent')
+          .select('*')
+          .order('veces_reproducidas', { ascending: false })
+          .limit(10);
+        if (monthTracks) {
+          document.getElementById('top-tracks-month-list').innerHTML = monthTracks.map(renderTrackItem).join('');
+        }
+
+        // 5. Top Álbumes (Recientes)
+        const { data: monthAlbums } = await supabase.from('view_top_albums_recent')
+          .select('*')
+          .order('veces_reproducidas', { ascending: false })
+          .limit(5);
+        if (monthAlbums) {
+          document.getElementById('top-albums-month-list').innerHTML = monthAlbums.map(renderTrackItem).join('');
+        }
+
+        // 6. Top 10 Canciones (Todos los Tiempos)
+        const { data: alltimeTracks } = await supabase.from('view_top_tracks_all_time')
+          .select('*')
+          .order('veces_reproducidas', { ascending: false })
+          .limit(10);
+        if (alltimeTracks) {
+          document.getElementById('top-tracks-alltime-list').innerHTML = alltimeTracks.map(renderTrackItem).join('');
+        }
+
+        // 7. Top 5 Álbumes (Todos los Tiempos)
+        const { data: alltimeAlbums } = await supabase.from('view_top_albums_all_time')
+          .select('*')
+          .order('veces_reproducidas', { ascending: false })
+          .limit(5);
+        if (alltimeAlbums) {
+          document.getElementById('top-albums-alltime-list').innerHTML = alltimeAlbums.map(renderTrackItem).join('');
+        }
+
+      } catch (err) {
+        console.error("Error al cargar las estadísticas:", err);
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadDashboard);
+    document.addEventListener('DOMContentLoaded', loadProfileData);
   </script>
 </body>
 </html>
