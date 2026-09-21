@@ -1,0 +1,21 @@
+{
+  "name": "dj-pixula-spotify-stats",
+  "version": "2.0.0",
+  "description": "Perfil personal de estadísticas de Spotify con Extended Streaming History y Supabase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import": "node import-history.js",
+    "covers": "node enrich-metadata.js",
+    "serve": "npx http-server . -c-1",
+    "dev": "npx http-server . -c-1 -o"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "axios": "^1.20.0",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
