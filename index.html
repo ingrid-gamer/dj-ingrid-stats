@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Estadísticas personales de escucha de Spotify de DJ Ingrid.">
+    <title>DJ Ingrid — Estadísticas de Spotify</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media (max-width: 640px) {
+            .profile-row {
+                align-items: flex-start;
+            }
+            .stats-column {
+                width: 100%;
+                align-items: stretch;
+            }
+            .stat-pill {
+                justify-content: flex-start;
+                width: 100%;
+            }
+            .recent-row {
+                align-items: flex-start;
+            }
+            .recent-date {
+                width: 88px;
+                text-align: left;
+                padding-top: 4px;
+            }
+            .track-title-link {
+                display: block;
+            }
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        spotify: '#1DB954',
+                        darkBg: '#121212',
+                        cardBg: '#181818',
+                        cardHover: '#282828',
+                        lightText: '#B3B3B3'
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+
+<body class="bg-darkBg text-white font-sans antialiased min-h-screen pb-10">
+    <header class="relative w-full">
+        <div class="w-full h-44 overflow-hidden bg-gray-900">
+            <img
+                src="https://i.pinimg.com/1200x/f1/e6/f3/f1e6f395ace79a32745e80285e057925.jpg"
+                alt="Banner"
+                class="w-full h-full object-cover object-center"
+            >
+        </div>
+
+        <div class="profile-row px-4 relative -mt-16 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+            <div class="w-28 h-28 rounded-full border-4 border-darkBg overflow-hidden bg-black z-10 shadow-xl">
+                <img
+                    src="https://i.pinimg.com/736x/b4/c2/dc/b4c2dca91183a807b53d8020eb28d2de.jpg"
+                    alt="Avatar de DJ Ingrid"
+                    class="w-full h-full object-cover"
+                >
+            </div>
+
+            <div class="stats-column flex flex-col gap-2 mb-2 w-full sm:w-auto">
+                <div class="stat-pill bg-[#2a2a2a] rounded-full px-4 py-1.5 text-sm flex items-center gap-2 border border-gray-700">
+                    <span class="text-spotify">🎧</span>
+                    <span>Total reproducciones: <b id="stat-reproducciones">...</b></span>
+                </div>
+                <div class="stat-pill bg-[#2a2a2a] rounded-full px-4 py-1.5 text-sm flex items-center gap-2 border border-gray-700">
+                    <span class="text-blue-400">👥</span>
+                    <span>Total de artistas escuchados: <b id="stat-artistas">...</b></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-4 mt-3">
+            <h1 class="text-3xl font-extrabold flex items-center gap-2">
+                DJ Ingrid
+                <span class="text-purple-500 text-xl">✔</span>
+            </h1>
+            <p class="text-lightText text-sm mt-1">Recopilación de escucha desde 2017</p>
+        </div>
+    </header>
+
+    <main class="px-4 mt-8 space-y-10 max-w-5xl mx-auto">
+        <!-- 1. RECIENTES -->
+        <section>
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 mb-4">
+                <h2 class="text-lg font-bold flex items-center gap-2 uppercase">
+                    <span class="text-red-500">🕒</span> Recientemente escuchadas
+                </h2>
+                <span id="ultima-actualizacion" class="text-xs text-gray-500">Actualizando...</span>
+            </div>
+            <div id="container-recientes" class="flex flex-col gap-3">
+                <p class="text-sm text-gray-500">Cargando canciones recientes...</p>
+            </div>
+        </section>
+
+        <!-- 2. TOP CANCIONES 90 DÍAS -->
+        <section>
+            <h2 class="text-lg font-bold mb-4 uppercase">
+                Top 10 Canciones <span class="text-xs text-gray-400 normal-case">(Últimos 90 días)</span>
+            </h2>
+            <div id="container-top-canciones-90" class="bg-cardBg rounded-xl p-2 border border-gray-800">
+                <p class="text-sm text-gray-500 p-2">Cargando top 90 días...</p>
+            </div>
+        </section>
+
+        <!-- 3. TOP ÁLBUMES 90 DÍAS -->
+        <section>
+            <h2 class="text-lg font-bold mb-4 uppercase">
+                Top 5 Álbumes <span class="text-xs text-gray-400 normal-case">(Últimos 90 días)</span>
+            </h2>
+            <div id="container-top-albumes-90" class="bg-cardBg rounded-xl p-2 border border-gray-800">
+                <p class="text-sm text-gray-500 p-2">Cargando álbumes recientes...</p>
+            </div>
+        </section>
+
+        <!-- 4. TOP CANCIONES HISTÓRICO -->
+        <section>
+            <h2 class="text-lg font-bold mb-4 uppercase">
+                Top 10 Canciones <span class="text-xs text-gray-400 normal-case">(Todos los tiempos)</span>
+            </h2>
+            <div id="container-top-canciones-all" class="bg-cardBg rounded-xl p-2 border border-gray-800">
+                <p class="text-sm text-gray-500 p-2">Cargando top histórico...</p>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">Se muestran canciones con al menos 50 reproducciones acumuladas.</p>
+        </section>
+
+        <!-- 5. TOP ÁLBUMES HISTÓRICO -->
+        <section>
+            <h2 class="text-lg font-bold mb-4 uppercase">
+                Top 5 Álbumes <span class="text-xs text-gray-400 normal-case">(Todos los tiempos)</span>
+            </h2>
+            <div id="container-top-albumes-all" class="bg-cardBg rounded-xl p-2 border border-gray-800">
+                <p class="text-sm text-gray-500 p-2">Cargando álbumes históricos...</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://zbovgcnqoavnmlybkhfj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_fQCiU8IUCf3PpfzVWiHQSg_qN7y_4Ra';
+
+        const DEFAULT_COVER =
+            'https://community.spotify.com/t5/image/serverpage/image-id/25294i2836BD1C1A31BDF2?v=v2';
+
+        const CHILE_TIMEZONE = 'America/Santiago';
+        const coverCache = new Map();
+
+        function escapeHTML(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function safeNumber(value) {
+            const number = Number(value);
+            return Number.isFinite(number) ? number : 0;
+        }
+
+        function formatNumber(value) {
+            return safeNumber(value).toLocaleString('es-CL');
+        }
+
+        function formatChileDate(playedAt) {
+            if (!playedAt) return '';
+
+            const date = new Date(playedAt);
+            if (Number.isNaN(date.getTime())) return '';
+
+            const dateText = date.toLocaleDateString('es-CL', {
+                timeZone: CHILE_TIMEZONE,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+            const timeText = date.toLocaleTimeString('es-CL', {
+                timeZone: CHILE_TIMEZONE,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+
+            return `${dateText}, ${timeText}`;
+        }
+
+        function cleanSearchText(text) {
+            if (!text) return '';
+
+            return String(text)
+                .replace(/\(feat\..*?\)/gi, '')
+                .replace(/\[feat\..*?\]/gi, '')
+                .replace(/\(with.*?\)/gi, '')
+                .replace(/\(remix.*?\)/gi, '')
+                .replace(/-\s*remix/gi, '')
+                .replace(/\(deluxe.*?\)/gi, '')
+                .replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        async function fetchJson(url, options = {}, timeoutMs = 10000) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+
+                if (!response.ok) {
+                    let detail = '';
+
+                    try {
+                        const errorBody = await response.json();
+                        detail = errorBody?.message || errorBody?.details || errorBody?.hint || errorBody?.code || '';
+                    } catch {
+                        try {
+                            detail = await response.text();
+                        } catch {
+                            detail = '';
+                        }
+                    }
+
+                    throw new Error(
+                        `HTTP ${response.status}${detail ? ` — ${detail}` : ''}`
+                    );
+                }
+
+                return await response.json();
+            } finally {
+                clearTimeout(timeout);
+            }
+        }
+
+        function normalizeText(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        }
+
+        function getSpotifyUrl(value) {
+            if (!value || typeof value !== 'string') return '';
+            const trimmed = value.trim();
+
+            if (/^https?:\/\//i.test(trimmed)) {
+                return trimmed;
+            }
+
+            if (trimmed.startsWith('spotify:track:')) {
+                const id = trimmed.slice('spotify:track:'.length).trim();
+                return /^[A-Za-z0-9]+$/.test(id)
+                    ? `https://open.spotify.com/track/${id}`
+                    : '';
+            }
+
+            if (trimmed.startsWith('spotify:album:')) {
+                const id = trimmed.slice('spotify:album:'.length).trim();
+                return /^[A-Za-z0-9]+$/.test(id)
+                    ? `https://open.spotify.com/album/${id}`
+                    : '';
+            }
+
+            return '';
+        }
+
+        function spotifyLink(uriOrUrl) {
+            return getSpotifyUrl(uriOrUrl);
+        }
+
+        async function querySpotifyOEmbed(spotifyValue) {
+            const spotifyUrl = getSpotifyUrl(spotifyValue);
+            if (!spotifyUrl) return null;
+
+            try {
+                const data = await fetchJson(
+                    `https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`,
+                    {},
+                    10000
+                );
+
+                if (!data?.thumbnail_url) return null;
+
+                return {
+                    cover: data.thumbnail_url,
+                    title: data.title || null
+                };
+            } catch (error) {
+                console.warn('Spotify oEmbed no respondió:', error);
+                return null;
+            }
+        }
+
+        async function queryItunesStrict(artist, titleOrAlbum, mode = 'song') {
+            if (!artist && !titleOrAlbum) return null;
+
+            try {
+                const query = encodeURIComponent(
+                    `${artist || ''} ${titleOrAlbum || ''}`.trim()
+                );
+
+                const entity = mode === 'album' ? 'album' : 'song';
+                const data = await fetchJson(
+                    `https://itunes.apple.com/search?term=${query}&entity=${entity}&limit=10&country=CL`,
+                    {},
+                    10000
+                );
+
+                const results = Array.isArray(data.results) ? data.results : [];
+                if (!results.length) return null;
+
+                const artistKey = normalizeText(artist);
+                const targetKey = normalizeText(titleOrAlbum);
+
+                const scored = results.map(item => {
+                    const itemArtist = normalizeText(item.artistName || '');
+                    const itemTitle = normalizeText(
+                        mode === 'album'
+                            ? (item.collectionName || '')
+                            : (item.trackName || '')
+                    );
+
+                    let score = 0;
+                    if (artistKey && itemArtist === artistKey) score += 10;
+                    else if (artistKey && (itemArtist.includes(artistKey) || artistKey.includes(itemArtist))) score += 4;
+
+                    if (targetKey && itemTitle === targetKey) score += 10;
+                    else if (targetKey && (itemTitle.includes(targetKey) || targetKey.includes(itemTitle))) score += 3;
+
+                    return { item, score };
+                }).sort((a, b) => b.score - a.score);
+
+                const best = scored[0];
+                if (!best || best.score < 14) return null;
+
+                const artwork = best.item.artworkUrl100;
+
+                return {
+                    cover: artwork ? artwork.replace('100x100bb', '600x600bb') : null,
+                    releaseYear: best.item.releaseDate
+                        ? String(best.item.releaseDate).slice(0, 4)
+                        : null
+                };
+            } catch (error) {
+                console.warn('iTunes no respondió:', error);
+                return null;
+            }
+        }
+
+        async function queryDeezerStrict(artist, title) {
+            if (!artist && !title) return null;
+
+            try {
+                const query = encodeURIComponent(
+                    `${artist || ''} ${title || ''}`.trim()
+                );
+
+                const data = await fetchJson(
+                    `https://corsproxy.io/?https://api.deezer.com/search?q=${query}&limit=10`,
+                    {},
+                    10000
+                );
+
+                const results = Array.isArray(data?.data) ? data.data : [];
+                const artistKey = normalizeText(artist);
+                const titleKey = normalizeText(title);
+
+                const scored = results.map(item => {
+                    const itemArtist = normalizeText(item?.artist?.name || '');
+                    const itemTitle = normalizeText(item?.title || '');
+                    let score = 0;
+
+                    if (itemArtist === artistKey) score += 10;
+                    else if (artistKey && itemArtist.includes(artistKey)) score += 4;
+
+                    if (itemTitle === titleKey) score += 10;
+                    else if (titleKey && itemTitle.includes(titleKey)) score += 3;
+
+                    return { item, score };
+                }).sort((a, b) => b.score - a.score);
+
+                const best = scored[0];
+                if (!best || best.score < 14) return null;
+
+                return best.item?.album?.cover_xl || best.item?.album?.cover_big || null;
+            } catch (error) {
+                console.warn('Deezer no respondió:', error);
+                return null;
+            }
+        }
+
+        async function fetchTrackMetadata(artistName, trackName, spotifyValue) {
+            const cacheKey = `track|||${normalizeText(artistName)}|||${normalizeText(trackName)}|||${normalizeText(spotifyValue)}`;
+            if (coverCache.has(cacheKey)) return coverCache.get(cacheKey);
+
+            const spotify = await querySpotifyOEmbed(spotifyValue);
+            if (spotify?.cover) {
+                const result = { cover: spotify.cover, releaseYear: null };
+                coverCache.set(cacheKey, result);
+                return result;
+            }
+
+            const itunes = await queryItunesStrict(artistName, trackName, 'song');
+            if (itunes?.cover) {
+                coverCache.set(cacheKey, itunes);
+                return itunes;
+            }
+
+            const deezer = await queryDeezerStrict(artistName, trackName);
+            if (deezer) {
+                const result = { cover: deezer, releaseYear: null };
+                coverCache.set(cacheKey, result);
+                return result;
+            }
+
+            const result = { cover: DEFAULT_COVER, releaseYear: null };
+            coverCache.set(cacheKey, result);
+            return result;
+        }
+
+        async function fetchAlbumMetadata(artistName, albumName, spotifyValue) {
+            const cacheKey = `album|||${normalizeText(artistName)}|||${normalizeText(albumName)}|||${normalizeText(spotifyValue)}`;
+            if (coverCache.has(cacheKey)) return coverCache.get(cacheKey);
+
+            const spotify = await querySpotifyOEmbed(spotifyValue);
+            if (spotify?.cover) {
+                const result = { cover: spotify.cover, releaseYear: null };
+                coverCache.set(cacheKey, result);
+
+                const itunesYear = await queryItunesStrict(artistName, albumName, 'album');
+                if (itunesYear?.releaseYear) result.releaseYear = itunesYear.releaseYear;
+
+                return result;
+            }
+
+            const itunes = await queryItunesStrict(artistName, albumName, 'album');
+            if (itunes?.cover) {
+                coverCache.set(cacheKey, itunes);
+                return itunes;
+            }
+
+            const result = { cover: DEFAULT_COVER, releaseYear: itunes?.releaseYear || null };
+            coverCache.set(cacheKey, result);
+            return result;
+        }
+
+        async function resolveCover(
+            imgId,
+            coverUrl,
+            artistName,
+            titleName,
+            spotifyValue = '',
+            isAlbum = false
+        ) {
+            const imgElement = document.getElementById(imgId);
+            if (!imgElement) return null;
+
+            const metadata = isAlbum
+                ? await fetchAlbumMetadata(artistName, titleName, spotifyValue)
+                : await fetchTrackMetadata(artistName, titleName, spotifyValue);
+
+            const currentImage = document.getElementById(imgId);
+            if (currentImage) {
+                currentImage.src = metadata?.cover || String(coverUrl || DEFAULT_COVER);
+            }
+
+            return metadata;
+        }
+
+        function renderTrackList(containerId, rows, showPlays = false) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (!Array.isArray(rows) || rows.length === 0) {
+                container.innerHTML =
+                    '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>';
+                return;
+            }
+
+            const html = rows.map((row, index) => {
+                const rawTrackName = row.track_name || 'Canción desconocida';
+                const rawArtistName = row.artist_name || 'Artista desconocido';
+                const trackName = escapeHTML(rawTrackName);
+                const artistName = escapeHTML(rawArtistName);
+                const albumName = row.album_name
+                    ? `${escapeHTML(row.album_name)}, `
+                    : '';
+                const plays = showPlays
+                    ? formatNumber(row.veces_reproducidas)
+                    : '';
+                const link = spotifyLink(row.spotify_url || row.spotify_track_uri);
+                const dateText = formatChileDate(row.played_at);
+                const imgId = `img-track-${containerId}-${index}`;
+
+                const left = dateText
+                    ? `
+                        <div class="recent-date text-xs text-gray-400 flex flex-col items-center justify-center w-28 text-center shrink-0">
+                            <span>${escapeHTML(dateText)}</span>
+                        </div>
+                    `
+                    : `
+                        <div class="text-lg font-bold text-gray-500 w-8 text-center shrink-0">
+                            ${index + 1}
+                        </div>
+                    `;
+
+                const titleHtml = link
+                    ? `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="track-title-link text-base font-bold text-white hover:text-spotify hover:underline truncate">${trackName}</a>`
+                    : `<h3 class="text-base font-bold text-white truncate">${trackName}</h3>`;
+
+                const playsHtml = showPlays
+                    ? `
+                        <div class="text-xs font-bold text-white mr-1 whitespace-nowrap shrink-0">
+                            ${plays}
+                            <span class="text-gray-400 font-normal">plays</span>
+                        </div>
+                    `
+                    : '';
+
+                return `
+                    <div class="recent-row flex items-center gap-3 p-2 rounded-md hover:bg-cardHover transition-colors">
+                        ${left}
+
+                        <div class="flex-1 min-w-0 flex flex-col text-right pr-1">
+                            ${titleHtml}
+                            <p class="text-sm text-lightText truncate">
+                                ${albumName}${artistName}
+                            </p>
+                        </div>
+
+                        ${playsHtml}
+
+                        <img
+                            id="${imgId}"
+                            src="${DEFAULT_COVER}"
+                            alt="Portada de ${trackName}"
+                            class="w-14 h-14 rounded bg-gray-800 object-cover flex-shrink-0"
+                            loading="lazy"
+                            onerror="this.onerror=null;this.src='${DEFAULT_COVER}'"
+                        >
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+
+            rows.forEach((row, index) => {
+                const imgId = `img-track-${containerId}-${index}`;
+                resolveCover(
+                    imgId,
+                    row.album_cover,
+                    row.artist_name,
+                    row.track_name,
+                    row.spotify_url || row.spotify_track_uri,
+                    false
+                );
+            });
+        }
+
+        function renderAlbumList(containerId, rows) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (!Array.isArray(rows) || rows.length === 0) {
+                container.innerHTML =
+                    '<p class="text-sm text-gray-500 p-2">No se encontraron datos.</p>';
+                return;
+            }
+
+            const html = rows.map((row, index) => {
+                const rawAlbumName = row.album_name || 'Álbum desconocido';
+                const albumName = escapeHTML(rawAlbumName);
+                const artistName = escapeHTML(row.artist_name || 'Artista desconocido');
+                const plays = formatNumber(row.veces_reproducidas);
+                const visibleYear = row.album_year || row.release_year || row.year || '';
+                const yearHtml = /^(19|20)\d{2}$/.test(String(visibleYear))
+                    ? `<span id="year-album-${containerId}-${index}" class="text-gray-400 font-normal ml-1">(${escapeHTML(visibleYear)})</span>`
+                    : `<span id="year-album-${containerId}-${index}" class="text-gray-400 font-normal ml-1"></span>`;
+                const imgId = `img-album-${containerId}-${index}`;
+
+                return `
+                    <div class="flex items-center gap-3 p-2 rounded-md hover:bg-cardHover transition-colors">
+                        <div class="text-lg font-bold text-gray-500 w-8 text-center shrink-0">
+                            ${index + 1}
+                        </div>
+
+                        <div class="flex-1 min-w-0 flex flex-col text-right pr-1">
+                            <h3 class="text-base font-bold text-white truncate">
+                                ${albumName}${yearHtml}
+                            </h3>
+                            <p class="text-sm text-lightText truncate">
+                                ${artistName}
+                            </p>
+                        </div>
+
+                        <div class="text-xs font-bold text-white mr-1 whitespace-nowrap shrink-0">
+                            ${plays}
+                            <span class="text-gray-400 font-normal">plays</span>
+                        </div>
+
+                        <img
+                            id="${imgId}"
+                            src="${DEFAULT_COVER}"
+                            alt="Portada de ${albumName}"
+                            class="w-14 h-14 rounded bg-gray-800 object-cover flex-shrink-0"
+                            loading="lazy"
+                            onerror="this.onerror=null;this.src='${DEFAULT_COVER}'"
+                        >
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+
+            rows.forEach((row, index) => {
+                const imgId = `img-album-${containerId}-${index}`;
+                resolveCover(
+                    imgId,
+                    row.album_cover,
+                    row.artist_name,
+                    row.album_name,
+                    row.spotify_url || row.spotify_album_uri || row.spotify_track_uri || '',
+                    true
+                ).then(metadata => {
+                    const yearElement = document.getElementById(`year-album-${containerId}-${index}`);
+                    if (
+                        yearElement &&
+                        !yearElement.textContent.trim() &&
+                        metadata?.releaseYear &&
+                        /^(19|20)\d{2}$/.test(String(metadata.releaseYear))
+                    ) {
+                        yearElement.textContent = `(${metadata.releaseYear})`;
+                    }
+                });
+            });
+        }
+
+        async function queryView(viewName) {
+            const endpoint =
+                `${SUPABASE_URL}/rest/v1/${encodeURIComponent(viewName)}?select=*`;
+
+            const data = await fetchJson(
+                endpoint,
+                {
+                    method: 'GET',
+                    headers: {
+                        apikey: SUPABASE_ANON_KEY,
+                        Accept: 'application/json'
+                    },
+                    cache: 'no-store'
+                }
+            );
+
+            if (!Array.isArray(data)) {
+                throw new Error(`${viewName}: la respuesta no es una lista válida.`);
+            }
+
+            return data;
+        }
+
+        async function queryRecentPlaysDirect() {
+            const params = new URLSearchParams({
+                select: 'id,played_at,track_name,artist_name,album_name,album_cover,spotify_url',
+                'played_at': 'not.is.null',
+                order: 'played_at.desc,id.desc',
+                limit: '20'
+            });
+
+            const endpoint = `${SUPABASE_URL}/rest/v1/spotify_history?${params.toString()}`;
+
+            const data = await fetchJson(
+                endpoint,
+                {
+                    method: 'GET',
+                    headers: {
+                        apikey: SUPABASE_ANON_KEY,
+                        Accept: 'application/json'
+                    },
+                    cache: 'no-store'
+                }
+            );
+
+            if (!Array.isArray(data)) {
+                throw new Error('spotify_history: la respuesta no es una lista válida.');
+            }
+
+            return data;
+        }
+
+        function sortRecentPlays(rows) {
+            return [...rows].sort((a, b) => {
+                const dateA = new Date(a.played_at || 0).getTime();
+                const dateB = new Date(b.played_at || 0).getTime();
+                if (dateB !== dateA) return dateB - dateA;
+                return safeNumber(b.id) - safeNumber(a.id);
+            });
+        }
+
+        function showLoadError(message) {
+            const containers = [
+                'container-recientes',
+                'container-top-canciones-90',
+                'container-top-albumes-90',
+                'container-top-canciones-all',
+                'container-top-albumes-all'
+            ];
+
+            containers.forEach((id) => {
+                const container = document.getElementById(id);
+
+                if (container) {
+                    container.innerHTML = `
+                        <div class="bg-red-950/40 border border-red-800 rounded-lg p-4">
+                            <p class="text-sm text-red-300 font-semibold">
+                                No se pudieron cargar las estadísticas.
+                            </p>
+                            <p class="text-xs text-red-400 mt-1">
+                                ${escapeHTML(message)}
+                            </p>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        async function cargarDatos() {
+            try {
+                const [
+                    stats,
+                    recientesRaw,
+                    canciones90,
+                    albumes90,
+                    cancionesAll,
+                    albumesAll
+                ] = await Promise.all([
+                    queryView('view_stats_general'),
+                    queryRecentPlaysDirect(),
+                    queryView('view_top_tracks_recent'),
+                    queryView('view_top_albums_recent'),
+                    queryView('view_top_tracks_all_time'),
+                    queryView('view_top_albums_all_time')
+                ]);
+
+                if (stats.length > 0) {
+                    document.getElementById('stat-reproducciones').innerText =
+                        formatNumber(stats[0].total_plays);
+
+                    document.getElementById('stat-artistas').innerText =
+                        formatNumber(stats[0].total_artistas);
+                }
+
+                const recientes = sortRecentPlays(recientesRaw).slice(0, 20);
+                const topCanciones90 = canciones90.slice(0, 10);
+                const topAlbumes90 = albumes90.slice(0, 5);
+                const topCancionesAll = cancionesAll.slice(0, 10);
+                const topAlbumesAll = albumesAll.slice(0, 5);
+
+                renderTrackList('container-recientes', recientes, false);
+                renderTrackList('container-top-canciones-90', topCanciones90, true);
+                renderAlbumList('container-top-albumes-90', topAlbumes90);
+                renderTrackList('container-top-canciones-all', topCancionesAll, true);
+                renderAlbumList('container-top-albumes-all', topAlbumesAll);
+
+                const now = new Date();
+                document.getElementById('ultima-actualizacion').textContent =
+                    `Última actualización: ${now.toLocaleString('es-CL', {
+                        timeZone: CHILE_TIMEZONE,
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    })}`;
+            } catch (error) {
+                console.error('Error al cargar datos de Supabase:', error);
+                showLoadError(error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', cargarDatos);
+    </script>
+</body>
+</html>
